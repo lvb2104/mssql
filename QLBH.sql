@@ -55,8 +55,8 @@ CREATE TABLE CTHD
     FOREIGN KEY (MASP) REFERENCES SANPHAM (MASP),
 );
 
-------------------------- I. Ngôn ngữ định nghĩa dữ liệu (Data Definition Language): ---------------------------------
-
+--------------------------------------------------------- I. Ngôn ngữ định nghĩa dữ liệu (Data Definition Language): --------------------------------------------------------
+-- 1. Tạo các quan hệ và khai báo các khóa chính, khóa ngoại của quan hệ.
 -- 2. Thêm vào thuộc tính GHICHU có kiểu dữ liệu varchar(20) cho quan hệ SANPHAM.
 ALTER TABLE SANPHAM 
 ADD GHICHU VARCHAR(20)
@@ -78,19 +78,22 @@ ALTER TABLE KHACHHANG
 ALTER COLUMN loAIKH VARCHAR(100)
 
 -- 7. Đơn vị tính của sản phẩm chỉ có thể là (“cay”,”hop”,”cai”,”quyen”,”chuc”)
-ALTER TABLE SANPHAM ADD CONSTRAINT DVI_CHECK CHECK (DVT IN ('cay', 'hop', 'cai', 'quyen', 'chuc'))
+ALTER TABLE SANPHAM
+ADD CONSTRAINT DVI_CHECK CHECK (DVT IN ('cay', 'hop', 'cai', 'quyen', 'chuc'))
 
 -- 8. Giá bán của sản phẩm từ 500 đồng trở lên.
-ALTER TABLE HOADON ADD CONSTRAINT TRIGIA_CHECK CHECK (TRIGIA > 500)
+ALTER TABLE HOADON
+ADD CONSTRAINT TRIGIA_CHECK CHECK (TRIGIA > 500)
 
 -- 9. Mỗi lần mua hàng, khách hàng phải mua ít nhất 1 sản phẩm.
-ALTER TABLE HOADON ADD CONSTRAINT SOHD_CHECK CHECK (SOHD >= 1)
+ALTER TABLE HOADON
+ADD CONSTRAINT SOHD_CHECK CHECK (SOHD >= 1)
 
 -- 10. Ngày khách hàng đăng ký là khách hàng thành viên phải lớn hơn ngày sinh của người đó.
-ALTER TABLE KHACHHANG ADD CONSTRAINT NGSINH_CHECK CHECK (NGSINH < NGDK)
+ALTER TABLE KHACHHANG
+ADD CONSTRAINT NGSINH_CHECK CHECK (NGSINH < NGDK)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-
--------------------------------- KHACHHANG --------------------------------------------
 INSERT INTO KHACHHANG
     (MAKH, HOTEN, DCHI, SODT, NGSINH, DOANHSO, NGDK)
 VALUES
@@ -105,7 +108,6 @@ VALUES
     ('KH09', 'Le Ha Vinh', '873 Le Hong Phong,  Q5,  TpHCM', '08654763', '1979-09-03', 70000, '2007-01-14'),
     ('KH10', 'Ha Duy Lap', '34/34B Nguyen Trai,  Q1,  TpHCM', '08768904', '1983-05-02', 675000, '2007-01-16');
 
---------------------------------- NHANVIEN --------------------------------------------
 INSERT INTO NHANVIEN
     (MANV, HOTEN, SODT, NGVL)
 VALUES
@@ -115,7 +117,6 @@ VALUES
     ('NV04', 'Ngo Thanh Tuan', '0913758498', '2006-06-24'),
     ('NV05', 'Nguyen Thi Truc Thanh', '0918590387', '2006-07-20');
 
---------------------------------- SANPHAM ---------------------------------------------
 INSERT INTO SANPHAM
     (MASP, TENSP, DVT, NUOCSX, GIA)
 VALUES
@@ -144,7 +145,6 @@ VALUES
     ('ST09', 'But long', 'cay', 'Viet Nam', 5000),
     ('ST10', 'But long', 'cay', 'Trung Quoc', 7000);
 
----------------------------------- HOADON ---------------------------------------------
 INSERT INTO HOADON
     (SOHD, NGHD, MAKH, MANV, TRIGIA)
 VALUES
@@ -172,7 +172,6 @@ VALUES
     ('1022', '2007-01-16', NULL, 'NV03', 7000),
     ('1023', '2007-01-17', NULL, 'NV01', 330000);
 
------------------------------------ CTHD ----------------------------------------------
 INSERT INTO CTHD
     (SOHD, MASP, SL)
 VALUES
@@ -225,23 +224,13 @@ VALUES
     ('1022', 'ST07', 1),
     ('1023', 'ST04', 6);
 
------------------------ II. Ngôn ngữ thao tác dữ liệu (Data Manipulation Language): -------------------------------------
-
-SELECT *
-FROM KHACHHANG;
-SELECT *
-FROM NHANVIEN;
-SELECT *
-FROM SANPHAM;
-SELECT *
-FROM HOADON;
-SELECT *
-FROM CTHD;
+------------------------------------------------------- II. Ngôn ngữ thao tác dữ liệu (Data Manipulation Language): ----------------------------------------------------------
 
 -- 2. Tạo quan hệ SANPHAM1 chứa toàn bộ dữ liệu của quan hệ SANPHAM. Tạo quan hệ KHACHHANG1 chứa toàn bộ dữ liệu của quan hệ KHACHHANG.
 SELECT *
 INTO SANPHAM1
 FROM SANPHAM;
+
 SELECT *
 INTO KHACHHANG1
 FROM KHACHHANG;
@@ -253,15 +242,15 @@ WHERE NUOCSX = 'Thai Lan'
 
 -- 4. Cập nhật giá giảm 5% đối với những sản phẩm do “Trung Quoc” sản xuất có giá từ 10.000 trở xuống (cho quan hệ SANPHAM1).
 UPDATE SANPHAM1
-SET GIA = GIA * .95
-WHERE NUOCSX = 'Trung Quoc'
+SET GIA = GIA * 0.95
+WHERE NUOCSX = 'Trung Quoc' AND GIA <= 10000
 
 -- 5. Cập nhật giá trị LOAIKH là “Vip” đối với những khách hàng đăng ký thành viên trước ngày 1/1/2007 có doanh số từ 10.000.000 trở lên hoặc khách hàng đăng ký thành viên từ 1/1/2007 trở về sau có doanh số từ 2.000.000 trở lên (cho quan hệ KHACHHANG1).
 UPDATE KHACHHANG1
 SET LOAIKH = 'Vip'
 WHERE (NGDK < '1/1/2007' AND DOANHSO >= 10000000) OR (NGDK >= '1/1/2007' AND DOANHSO >= 2000000)
 
---------------------------- III. Ngôn ngữ truy vấn dữ liệu có cấu trúc: ---------------------------------
+-------------------------------------------------------- III. Ngôn ngữ truy vấn dữ liệu có cấu trúc: -------------------------------------------------------------------------
 -- 1. In ra danh sách các sản phẩm (MASP,TENSP) do “Trung Quoc” sản xuất.
 SELECT MASP, TENSP
 FROM SANPHAM
@@ -301,29 +290,132 @@ ORDER BY DAY(NGHD) ASC, TRIGIA DESC
 -- 8. In ra danh sách các khách hàng (MAKH, HOTEN) đã mua hàng trong ngày 1/1/2007.
 SELECT KHACHHANG.MAKH, KHACHHANG.HOTEN
 FROM KHACHHANG
-    INNER JOIN HOADON
-    ON KHACHHANG.MAKH = HOADON.MAKH
+JOIN HOADON ON KHACHHANG.MAKH = HOADON.MAKH
 WHERE HOADON.NGHD = '1/1/2007'
 
 -- 9. In ra số hóa đơn, trị giá các hóa đơn do nhân viên có tên “Nguyen Van B” lập trong ngày 28/10/2006.
 SELECT HOADON.SOHD, HOADON.TRIGIA
 FROM HOADON
-    INNER JOIN NHANVIEN
-    ON HOADON.MANV = NHANVIEN.MANV
+JOIN NHANVIEN ON HOADON.MANV = NHANVIEN.MANV
 WHERE NHANVIEN.HOTEN = 'Nguyen Van B' AND HOADON.NGHD = '28/10/2006'
 
 -- 10. In ra danh sách các sản phẩm (MASP,TENSP) được khách hàng có tên “Nguyen Van A” mua trong tháng 10/2006.
 SELECT SANPHAM.MASP, SANPHAM.TENSP
-FROM
-    (((   SANPHAM
-    INNER JOIN CTHD ON CTHD.MASP = SANPHAM.MASP )
-    INNER JOIN HOADON ON HOADON.SOHD = CTHD.SOHD)
-    INNER JOIN KHACHHANG ON KHACHHANG.MAKH = HOADON.MAKH)
+FROM SANPHAM
+JOIN CTHD ON SANPHAM.MASP = CTHD.MASP
+JOIN HOADON ON CTHD.SOHD = HOADON.SOHD
+JOIN KHACHHANG ON HOADON.MAKH = KHACHHANG.MAKH
 WHERE KHACHHANG.HOTEN = 'Nguyen Van A' AND MONTH(NGHD) = 10 AND YEAR(NGHD) = 2006
 
 -- 11. Tìm các số hóa đơn đã mua sản phẩm có mã số “BB01” hoặc “BB02”.
 SELECT HOADON.SOHD
 FROM HOADON
-    INNER JOIN CTHD
-    ON CTHD.SOHD = HOADON.SOHD
+JOIN CTHD ON HOADON.SOHD = CTHD.SOHD
 WHERE CTHD.MASP IN ('BB01', 'BB02')
+
+-- 12. Tìm các số hóa đơn đã mua sản phẩm có mã số “BB01” hoặc “BB02”, mỗi sản phẩm mua với số lượng từ 10 đến 20.
+SELECT HOADON.SOHD
+FROM HOADON
+JOIN CTHD ON HOADON.SOHD = CTHD.SOHD
+WHERE CTHD.MASP IN ('BB01', 'BB02') AND CTHD.SL BETWEEN 10 AND 20
+
+-- 13. Tìm các số hóa đơn mua cùng lúc 2 sản phẩm có mã số “BB01” và “BB02”, mỗi sản phẩm mua với số lượng từ 10 đến 20.
+SELECT SOHD
+FROM CTHD
+WHERE MASP = 'BB01' AND SL BETWEEN 10 AND 20
+INTERSECT
+SELECT SOHD
+FROM CTHD
+WHERE MASP = 'BB02' AND SL BETWEEN 10 AND 20
+
+-- Cach 2:
+-- SELECT SOHD
+-- FROM CTHD
+-- WHERE MASP IN ('BB01', 'BB02') AND SL BETWEEN 10 AND 20
+-- GROUP BY SOHD
+-- HAVING COUNT(DISTINCT MASP) = 2
+
+-- 14. In ra danh sách các sản phẩm (MASP,TENSP) do “Trung Quoc” sản xuất hoặc các sản phẩm được bán ra trong ngày 1/1/2007.
+SELECT MASP, TENSP
+FROM SANPHAM
+WHERE NUOCSX = 'Trung Quoc'
+UNION
+SELECT SANPHAM.MASP, SANPHAM.TENSP
+FROM SANPHAM
+JOIN CTHD ON SANPHAM.MASP = CTHD.MASP
+JOIN HOADON ON CTHD.SOHD = HOADON.SOHD
+WHERE HOADON.NGHD = '1/1/2007'
+
+-- Cach 2:
+-- SELECT MASP, TENSP
+-- FROM SANPHAM
+-- WHERE NUOCSX = 'Trung Quoc' OR MASP IN (
+--     SELECT MASP
+--     FROM CTHD
+--     WHERE SOHD IN (
+--         SELECT SOHD
+--         FROM HOADON
+--         WHERE NGHD = '1/1/2007'
+--     )
+-- )
+
+-- Cach 3:
+-- SELECT MASP, TENSP
+-- FROM SANPHAM
+-- WHERE NUOCSX = 'Trung Quoc' OR MASP IN (
+--     SELECT SANPHAM.MASP
+--     FROM SANPHAM
+--     JOIN CTHD ON SANPHAM.MASP = CTHD.MASP
+--     JOIN HOADON ON CTHD.SOHD = HOADON.SOHD
+--     WHERE HOADON.NGHD = '1/1/2007'
+-- )
+
+-- 15. In ra danh sách các sản phẩm (MASP,TENSP) không bán được.
+SELECT MASP, TENSP
+FROM SANPHAM
+EXCEPT
+SELECT SANPHAM.MASP, SANPHAM.TENSP
+FROM SANPHAM
+JOIN CTHD ON SANPHAM.MASP = CTHD.MASP
+
+-- Cach 2:
+-- SELECT MASP, TENSP
+-- FROM SANPHAM
+-- WHERE MASP NOT IN (
+--     SELECT MASP
+--     FROM CTHD
+-- )
+
+-- 16. In ra danh sách các sản phẩm (MASP,TENSP) không bán được trong năm 2006.
+SELECT MASP, TENSP
+FROM SANPHAM
+WHERE MASP NOT IN (
+    SELECT CTHD.MASP
+    FROM CTHD
+    JOIN HOADON ON CTHD.SOHD = HOADON.SOHD
+    WHERE YEAR(HOADON.NGHD) = 2006
+)
+
+-- 17. In ra danh sách các sản phẩm (MASP,TENSP) do “Trung Quoc” sản xuất không bán được trong năm 2006.
+SELECT MASP, TENSP
+FROM SANPHAM
+WHERE NUOCSX = 'Trung Quoc' AND MASP NOT IN (
+    SELECT CTHD.MASP
+    FROM CTHD
+    JOIN HOADON
+    ON CTHD.SOHD = HOADON.SOHD
+    WHERE YEAR(HOADON.NGHD) = 2006
+)
+
+-- 18. Tìm số hóa đơn trong năm 2006 đã mua ít nhất tất cả các sản phẩm do Singapore sản xuất.
+SELECT CTHD.SOHD
+FROM CTHD
+JOIN SANPHAM ON SANPHAM.MASP = CTHD.MASP
+JOIN HOADON ON HOADON.SOHD = CTHD.SOHD
+WHERE YEAR(HOADON.NGHD) = 2006 AND SANPHAM.NUOCSX = 'Singapore'
+GROUP BY CTHD.SOHD
+HAVING COUNT(DISTINCT SANPHAM.MASP) = (
+    SELECT COUNT(DISTINCT MASP)
+    FROM SANPHAM
+    WHERE NUOCSX = 'Singapore'
+)
