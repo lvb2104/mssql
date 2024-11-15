@@ -1,10 +1,7 @@
-SET DATEFORMAT dmy
--- DROP DATABASE QLBH;
+DROP DATABASE QLBH;
 CREATE DATABASE QLBH;
-GO
-
 USE QLBH;
-GO
+SET DATEFORMAT dmy
 
 CREATE TABLE KHACHHANG
 (
@@ -418,4 +415,68 @@ HAVING COUNT(DISTINCT SANPHAM.MASP) = (
     SELECT COUNT(DISTINCT MASP)
     FROM SANPHAM
     WHERE NUOCSX = 'Singapore'
+)
+
+--26. In ra danh sách 3 khách hàng (MAKH, HOTEN) có doanh số cao nhất.
+SELECT TOP 3 MAKH, HOTEN
+FROM KHACHHANG
+ORDER BY DOANHSO DESC
+
+--27. In ra danh sách các sản phẩm (MASP, TENSP) có giá bán bằng 1 trong 3 mức giá cao nhất.
+SELECT MASP, TENSP
+FROM SANPHAM
+WHERE GIA IN (
+    SELECT DISTINCT TOP 3 GIA
+    FROM SANPHAM
+    ORDER BY GIA DESC
+)
+
+--29. In ra danh sách các sản phẩm (MASP, TENSP) do “Trung Quoc” sản xuất có giá bằng 1 trong 3 mức giá cao nhất (của sản phẩm do “Trung Quoc” sản xuất).
+SELECT MASP, TENSP
+FROM SANPHAM
+WHERE NUOCSX = 'Trung Quoc' AND GIA IN (
+    SELECT DISTINCT TOP 3 GIA
+    FROM SANPHAM
+    WHERE NUOCSX = 'Trung Quoc'
+    ORDER BY GIA DESC
+)
+
+--34. Tính doanh thu bán hàng mỗi ngày.
+SELECT NGHD, SUM(TRIGIA) AS DOANHTHU
+FROM HOADON
+GROUP BY NGHD
+ORDER BY NGHD
+
+--36. Tính doanh thu bán hàng của từng tháng trong năm 2006.
+SELECT MONTH(NGHD) AS MONTH, SUM(TRIGIA) AS DOANHTHU
+FROM HOADON
+WHERE YEAR(NGHD) = 2006
+GROUP BY MONTH(NGHD)
+
+--38. Tìm hóa đơn có mua 3 sản phẩm do “Viet Nam” sản xuất (3 sản phẩm khác nhau).
+SELECT SOHD
+FROM CTHD
+JOIN SANPHAM ON SANPHAM.MASP = CTHD.MASP
+WHERE SANPHAM.NUOCSX = 'Viet Nam'
+GROUP BY SOHD
+HAVING COUNT(DISTINCT SANPHAM.MASP) = 3
+
+--43. Tìm nước sản xuất sản xuất ít nhất 3 sản phẩm có giá bán khác nhau.
+SELECT NUOCSX
+FROM SANPHAM
+GROUP BY NUOCSX
+HAVING COUNT(DISTINCT GIA) >= 3
+
+--44. *Trong 10 khách hàng có doanh số cao nhất, tìm khách hàng có số lần mua hàng nhiều nhất.
+SELECT *
+FROM (
+    SELECT TOP 10 MAKH
+    FROM KHACHHANG
+    ORDER BY DOANHSO DESC
+) AS TOP10
+WHERE MAKH IN (
+    SELECT TOP 1 MAKH
+    FROM HOADON
+    GROUP BY MAKH
+    ORDER BY COUNT(SOHD) DESC
 )

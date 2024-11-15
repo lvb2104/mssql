@@ -1,10 +1,7 @@
-SET DATEFORMAT dmy
--- DROP DATABASE QLBH;
+DROP DATABASE QLBH;
 CREATE DATABASE QLBH;
-GO
-
 USE QLBH;
-GO
+SET DATEFORMAT dmy
 
 CREATE TABLE KHACHHANG
 (
@@ -55,8 +52,8 @@ CREATE TABLE CTHD
     FOREIGN KEY (MASP) REFERENCES SANPHAM (MASP),
 );
 
-------------------------- I. Ngôn ngữ định nghĩa dữ liệu (Data Definition Language): ---------------------------------
-
+--------------------------------------------------------- I. Ngôn ngữ định nghĩa dữ liệu (Data Definition Language): --------------------------------------------------------
+-- 1. Tạo các quan hệ và khai báo các khóa chính, khóa ngoại của quan hệ.
 -- 2. Thêm vào thuộc tính GHICHU có kiểu dữ liệu varchar(20) cho quan hệ SANPHAM.
 ALTER TABLE SANPHAM 
 ADD GHICHU VARCHAR(20)
@@ -78,19 +75,22 @@ ALTER TABLE KHACHHANG
 ALTER COLUMN loAIKH VARCHAR(100)
 
 -- 7. Đơn vị tính của sản phẩm chỉ có thể là (“cay”,”hop”,”cai”,”quyen”,”chuc”)
-ALTER TABLE SANPHAM ADD CONSTRAINT DVI_CHECK CHECK (DVT IN ('cay', 'hop', 'cai', 'quyen', 'chuc'))
+ALTER TABLE SANPHAM
+ADD CONSTRAINT DVI_CHECK CHECK (DVT IN ('cay', 'hop', 'cai', 'quyen', 'chuc'))
 
 -- 8. Giá bán của sản phẩm từ 500 đồng trở lên.
-ALTER TABLE HOADON ADD CONSTRAINT TRIGIA_CHECK CHECK (TRIGIA > 500)
+ALTER TABLE HOADON
+ADD CONSTRAINT TRIGIA_CHECK CHECK (TRIGIA > 500)
 
 -- 9. Mỗi lần mua hàng, khách hàng phải mua ít nhất 1 sản phẩm.
-ALTER TABLE HOADON ADD CONSTRAINT SOHD_CHECK CHECK (SOHD >= 1)
+ALTER TABLE HOADON
+ADD CONSTRAINT SOHD_CHECK CHECK (SOHD >= 1)
 
 -- 10. Ngày khách hàng đăng ký là khách hàng thành viên phải lớn hơn ngày sinh của người đó.
-ALTER TABLE KHACHHANG ADD CONSTRAINT NGSINH_CHECK CHECK (NGSINH < NGDK)
+ALTER TABLE KHACHHANG
+ADD CONSTRAINT NGSINH_CHECK CHECK (NGSINH < NGDK)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-
--------------------------------- KHACHHANG --------------------------------------------
 INSERT INTO KHACHHANG
     (MAKH, HOTEN, DCHI, SODT, NGSINH, DOANHSO, NGDK)
 VALUES
@@ -105,7 +105,6 @@ VALUES
     ('KH09', 'Le Ha Vinh', '873 Le Hong Phong,  Q5,  TpHCM', '08654763', '1979-09-03', 70000, '2007-01-14'),
     ('KH10', 'Ha Duy Lap', '34/34B Nguyen Trai,  Q1,  TpHCM', '08768904', '1983-05-02', 675000, '2007-01-16');
 
---------------------------------- NHANVIEN --------------------------------------------
 INSERT INTO NHANVIEN
     (MANV, HOTEN, SODT, NGVL)
 VALUES
@@ -115,7 +114,6 @@ VALUES
     ('NV04', 'Ngo Thanh Tuan', '0913758498', '2006-06-24'),
     ('NV05', 'Nguyen Thi Truc Thanh', '0918590387', '2006-07-20');
 
---------------------------------- SANPHAM ---------------------------------------------
 INSERT INTO SANPHAM
     (MASP, TENSP, DVT, NUOCSX, GIA)
 VALUES
@@ -144,7 +142,6 @@ VALUES
     ('ST09', 'But long', 'cay', 'Viet Nam', 5000),
     ('ST10', 'But long', 'cay', 'Trung Quoc', 7000);
 
----------------------------------- HOADON ---------------------------------------------
 INSERT INTO HOADON
     (SOHD, NGHD, MAKH, MANV, TRIGIA)
 VALUES
@@ -172,7 +169,6 @@ VALUES
     ('1022', '2007-01-16', NULL, 'NV03', 7000),
     ('1023', '2007-01-17', NULL, 'NV01', 330000);
 
------------------------------------ CTHD ----------------------------------------------
 INSERT INTO CTHD
     (SOHD, MASP, SL)
 VALUES
@@ -225,23 +221,13 @@ VALUES
     ('1022', 'ST07', 1),
     ('1023', 'ST04', 6);
 
------------------------ II. Ngôn ngữ thao tác dữ liệu (Data Manipulation Language): -------------------------------------
-
-SELECT *
-FROM KHACHHANG;
-SELECT *
-FROM NHANVIEN;
-SELECT *
-FROM SANPHAM;
-SELECT *
-FROM HOADON;
-SELECT *
-FROM CTHD;
+------------------------------------------------------- II. Ngôn ngữ thao tác dữ liệu (Data Manipulation Language): ----------------------------------------------------------
 
 -- 2. Tạo quan hệ SANPHAM1 chứa toàn bộ dữ liệu của quan hệ SANPHAM. Tạo quan hệ KHACHHANG1 chứa toàn bộ dữ liệu của quan hệ KHACHHANG.
 SELECT *
 INTO SANPHAM1
 FROM SANPHAM;
+
 SELECT *
 INTO KHACHHANG1
 FROM KHACHHANG;
@@ -253,15 +239,15 @@ WHERE NUOCSX = 'Thai Lan'
 
 -- 4. Cập nhật giá giảm 5% đối với những sản phẩm do “Trung Quoc” sản xuất có giá từ 10.000 trở xuống (cho quan hệ SANPHAM1).
 UPDATE SANPHAM1
-SET GIA = GIA * .95
-WHERE NUOCSX = 'Trung Quoc'
+SET GIA = GIA * 0.95
+WHERE NUOCSX = 'Trung Quoc' AND GIA <= 10000
 
 -- 5. Cập nhật giá trị LOAIKH là “Vip” đối với những khách hàng đăng ký thành viên trước ngày 1/1/2007 có doanh số từ 10.000.000 trở lên hoặc khách hàng đăng ký thành viên từ 1/1/2007 trở về sau có doanh số từ 2.000.000 trở lên (cho quan hệ KHACHHANG1).
 UPDATE KHACHHANG1
 SET LOAIKH = 'Vip'
 WHERE (NGDK < '1/1/2007' AND DOANHSO >= 10000000) OR (NGDK >= '1/1/2007' AND DOANHSO >= 2000000)
 
---------------------------- III. Ngôn ngữ truy vấn dữ liệu có cấu trúc: ---------------------------------
+-------------------------------------------------------- III. Ngôn ngữ truy vấn dữ liệu có cấu trúc: -------------------------------------------------------------------------
 -- 1. In ra danh sách các sản phẩm (MASP,TENSP) do “Trung Quoc” sản xuất.
 SELECT MASP, TENSP
 FROM SANPHAM
@@ -301,100 +287,208 @@ ORDER BY DAY(NGHD) ASC, TRIGIA DESC
 -- 8. In ra danh sách các khách hàng (MAKH, HOTEN) đã mua hàng trong ngày 1/1/2007.
 SELECT KHACHHANG.MAKH, KHACHHANG.HOTEN
 FROM KHACHHANG
-    INNER JOIN HOADON
-    ON KHACHHANG.MAKH = HOADON.MAKH
+JOIN HOADON ON KHACHHANG.MAKH = HOADON.MAKH
 WHERE HOADON.NGHD = '1/1/2007'
 
 -- 9. In ra số hóa đơn, trị giá các hóa đơn do nhân viên có tên “Nguyen Van B” lập trong ngày 28/10/2006.
 SELECT HOADON.SOHD, HOADON.TRIGIA
 FROM HOADON
-    INNER JOIN NHANVIEN
-    ON HOADON.MANV = NHANVIEN.MANV
+JOIN NHANVIEN ON HOADON.MANV = NHANVIEN.MANV
 WHERE NHANVIEN.HOTEN = 'Nguyen Van B' AND HOADON.NGHD = '28/10/2006'
 
 -- 10. In ra danh sách các sản phẩm (MASP,TENSP) được khách hàng có tên “Nguyen Van A” mua trong tháng 10/2006.
 SELECT SANPHAM.MASP, SANPHAM.TENSP
-FROM
-    (((   SANPHAM
-    INNER JOIN CTHD ON CTHD.MASP = SANPHAM.MASP )
-    INNER JOIN HOADON ON HOADON.SOHD = CTHD.SOHD)
-    INNER JOIN KHACHHANG ON KHACHHANG.MAKH = HOADON.MAKH)
+FROM SANPHAM
+JOIN CTHD ON SANPHAM.MASP = CTHD.MASP
+JOIN HOADON ON CTHD.SOHD = HOADON.SOHD
+JOIN KHACHHANG ON HOADON.MAKH = KHACHHANG.MAKH
 WHERE KHACHHANG.HOTEN = 'Nguyen Van A' AND MONTH(NGHD) = 10 AND YEAR(NGHD) = 2006
 
 -- 11. Tìm các số hóa đơn đã mua sản phẩm có mã số “BB01” hoặc “BB02”.
 SELECT HOADON.SOHD
 FROM HOADON
-    INNER JOIN CTHD
-    ON CTHD.SOHD = HOADON.SOHD
+JOIN CTHD ON HOADON.SOHD = CTHD.SOHD
 WHERE CTHD.MASP IN ('BB01', 'BB02')
 
------------------------------------------------------------------------------------------
--- III. Ngôn ngữ truy vấn dữ liệu có cấu trúc:
+-- 12. Tìm các số hóa đơn đã mua sản phẩm có mã số “BB01” hoặc “BB02”, mỗi sản phẩm mua với số lượng từ 10 đến 20.
+SELECT HOADON.SOHD
+FROM HOADON
+JOIN CTHD ON HOADON.SOHD = CTHD.SOHD
+WHERE CTHD.MASP IN ('BB01', 'BB02') AND CTHD.SL BETWEEN 10 AND 20
+
 -- 13. Tìm các số hóa đơn mua cùng lúc 2 sản phẩm có mã số “BB01” và “BB02”, mỗi sản phẩm mua với số lượng từ 10 đến 20.
-    SELECT SOHD
-    FROM CTHD
-    WHERE MASP = 'BB01' AND SL BETWEEN 10 AND 20
+SELECT SOHD
+FROM CTHD
+WHERE MASP = 'BB01' AND SL BETWEEN 10 AND 20
 INTERSECT
-    SELECT SOHD
-    FROM CTHD
-    WHERE MASP = 'BB02' AND SL BETWEEN 10 AND 20
+SELECT SOHD
+FROM CTHD
+WHERE MASP = 'BB02' AND SL BETWEEN 10 AND 20
+
+-- Cach 2:
+-- SELECT SOHD
+-- FROM CTHD
+-- WHERE MASP IN ('BB01', 'BB02') AND SL BETWEEN 10 AND 20
+-- GROUP BY SOHD
+-- HAVING COUNT(DISTINCT MASP) = 2
 
 -- 14. In ra danh sách các sản phẩm (MASP,TENSP) do “Trung Quoc” sản xuất hoặc các sản phẩm được bán ra trong ngày 1/1/2007.
-    SELECT SANPHAM.MASP, SANPHAM.TENSP
-    FROM SANPHAM
-    WHERE SANPHAM.NUOCSX = 'Trung Quoc'
+SELECT MASP, TENSP
+FROM SANPHAM
+WHERE NUOCSX = 'Trung Quoc'
 UNION
-    SELECT SANPHAM.MASP, SANPHAM.TENSP
-    FROM SANPHAM
-        INNER JOIN CTHD
-        ON SANPHAM.MASP = CTHD.MASP
-        INNER JOIN HOADON
-        ON CTHD.SOHD = HOADON.SOHD
-    WHERE HOADON.NGHD = '1/1/2007'
+SELECT SANPHAM.MASP, SANPHAM.TENSP
+FROM SANPHAM
+JOIN CTHD ON SANPHAM.MASP = CTHD.MASP
+JOIN HOADON ON CTHD.SOHD = HOADON.SOHD
+WHERE HOADON.NGHD = '1/1/2007'
 
--- SECOND WAY
+-- Cach 2:
 -- SELECT MASP, TENSP
 -- FROM SANPHAM
--- WHERE NUOCSX = 'Trung Quoc' OR MASP IN
---     (SELECT MASP
+-- WHERE NUOCSX = 'Trung Quoc' OR MASP IN (
+--     SELECT MASP
 --     FROM CTHD
---     WHERE SOHD IN
---         (SELECT SOHD
+--     WHERE SOHD IN (
+--         SELECT SOHD
 --         FROM HOADON
---         WHERE NGHD = '1/1/2007'))
+--         WHERE NGHD = '1/1/2007'
+--     )
+-- )
+
+-- Cach 3:
+-- SELECT MASP, TENSP
+-- FROM SANPHAM
+-- WHERE NUOCSX = 'Trung Quoc' OR MASP IN (
+--     SELECT SANPHAM.MASP
+--     FROM SANPHAM
+--     JOIN CTHD ON SANPHAM.MASP = CTHD.MASP
+--     JOIN HOADON ON CTHD.SOHD = HOADON.SOHD
+--     WHERE HOADON.NGHD = '1/1/2007'
+-- )
+
+-- 15. In ra danh sách các sản phẩm (MASP,TENSP) không bán được.
+SELECT MASP, TENSP
+FROM SANPHAM
+EXCEPT
+SELECT SANPHAM.MASP, SANPHAM.TENSP
+FROM SANPHAM
+JOIN CTHD ON SANPHAM.MASP = CTHD.MASP
+
+-- Cach 2:
+-- SELECT MASP, TENSP
+-- FROM SANPHAM
+-- WHERE MASP NOT IN (
+--     SELECT MASP
+--     FROM CTHD
+-- )
+
+-- 16. In ra danh sách các sản phẩm (MASP,TENSP) không bán được trong năm 2006.
+SELECT MASP, TENSP
+FROM SANPHAM
+WHERE MASP NOT IN (
+    SELECT CTHD.MASP
+    FROM CTHD
+    JOIN HOADON ON CTHD.SOHD = HOADON.SOHD
+    WHERE YEAR(HOADON.NGHD) = 2006
+)
 
 -- 17. In ra danh sách các sản phẩm (MASP,TENSP) do “Trung Quoc” sản xuất không bán được trong năm 2006.
 SELECT MASP, TENSP
 FROM SANPHAM
-WHERE NUOCSX = 'Trung Quoc' AND MASP NOT IN 
-    (SELECT MASP
+WHERE NUOCSX = 'Trung Quoc' AND MASP NOT IN (
+    SELECT CTHD.MASP
     FROM CTHD
-    INNER JOIN HOADON
+    JOIN HOADON
     ON CTHD.SOHD = HOADON.SOHD
-    WHERE YEAR(HOADON.NGHD) = 2006)
+    WHERE YEAR(HOADON.NGHD) = 2006
+)
 
 -- 18. Tìm số hóa đơn trong năm 2006 đã mua ít nhất tất cả các sản phẩm do Singapore sản xuất.
+SELECT CTHD.SOHD
+FROM CTHD
+JOIN SANPHAM ON SANPHAM.MASP = CTHD.MASP
+JOIN HOADON ON HOADON.SOHD = CTHD.SOHD
+WHERE YEAR(HOADON.NGHD) = 2006 AND SANPHAM.NUOCSX = 'Singapore'
+GROUP BY CTHD.SOHD
+HAVING COUNT(DISTINCT SANPHAM.MASP) = (
+    SELECT COUNT(DISTINCT MASP)
+    FROM SANPHAM
+    WHERE NUOCSX = 'Singapore'
+)
+
+--26. In ra danh sách 3 khách hàng (MAKH, HOTEN) có doanh số cao nhất.
+SELECT TOP 3 MAKH, HOTEN
+FROM KHACHHANG
+ORDER BY DOANHSO DESC
+
+--27. In ra danh sách các sản phẩm (MASP, TENSP) có giá bán bằng 1 trong 3 mức giá cao nhất.
+SELECT MASP, TENSP
+FROM SANPHAM
+WHERE GIA IN (
+    SELECT DISTINCT TOP 3 GIA
+    FROM SANPHAM
+    ORDER BY GIA DESC
+)
+
+--29. In ra danh sách các sản phẩm (MASP, TENSP) do “Trung Quoc” sản xuất có giá bằng 1 trong 3 mức giá cao nhất (của sản phẩm do “Trung Quoc” sản xuất).
+SELECT MASP, TENSP
+FROM SANPHAM
+WHERE NUOCSX = 'Trung Quoc' AND GIA IN (
+    SELECT DISTINCT TOP 3 GIA
+    FROM SANPHAM
+    WHERE NUOCSX = 'Trung Quoc'
+    ORDER BY GIA DESC
+)
+
+--34. Tính doanh thu bán hàng mỗi ngày.
+SELECT NGHD, SUM(TRIGIA) AS DOANHTHU
+FROM HOADON
+GROUP BY NGHD
+ORDER BY NGHD
+
+--36. Tính doanh thu bán hàng của từng tháng trong năm 2006.
+SELECT MONTH(NGHD) AS MONTH, SUM(TRIGIA) AS DOANHTHU
+FROM HOADON
+WHERE YEAR(NGHD) = 2006
+GROUP BY MONTH(NGHD)
+
+--38. Tìm hóa đơn có mua 3 sản phẩm do “Viet Nam” sản xuất (3 sản phẩm khác nhau).
 SELECT SOHD
 FROM CTHD
-WHERE MASP IN
-    (SELECT MASP
-    FROM SANPHAM
-    WHERE NUOCSX = 'Singapore')
+JOIN SANPHAM ON SANPHAM.MASP = CTHD.MASP
+WHERE SANPHAM.NUOCSX = 'Viet Nam'
 GROUP BY SOHD
-HAVING COUNT(DISTINCT MASP) = 
-    (SELECT COUNT(*)
-    FROM SANPHAM
-    WHERE NUOCSX = 'Singapore')
+HAVING COUNT(DISTINCT SANPHAM.MASP) = 3
+
+--43. Tìm nước sản xuất sản xuất ít nhất 3 sản phẩm có giá bán khác nhau.
+SELECT NUOCSX
+FROM SANPHAM
+GROUP BY NUOCSX
+HAVING COUNT(DISTINCT GIA) >= 3
+
+--44. *Trong 10 khách hàng có doanh số cao nhất, tìm khách hàng có số lần mua hàng nhiều nhất.
+SELECT *
+FROM (
+    SELECT TOP 10 MAKH
+    FROM KHACHHANG
+    ORDER BY DOANHSO DESC
+) AS TOP10
+WHERE MAKH IN (
+    SELECT TOP 1 MAKH
+    FROM HOADON
+    GROUP BY MAKH
+    ORDER BY COUNT(SOHD) DESC
+)
 
 
--- DROP DATABASE QLGV;
-SET DATEFORMAT DMY;
 
+
+
+DROP DATABASE QLGV;
 CREATE DATABASE QLGV;
-GO
-
 USE QLGV;
-GO
+SET DATEFORMAT DMY;
 
 CREATE TABLE HOCVIEN
 (
@@ -483,7 +577,7 @@ ADD FOREIGN KEY (MALOP) REFERENCES LOP(MALOP);
 
 ALTER TABLE LOP
 ADD FOREIGN KEY (MAGVCN) REFERENCES GIAOVIEN(MAGV);
-    -- FOREIGN KEY (TRGLOP) REFERENCES HOCVIEN(MAHV); --
+-- FOREIGN KEY (TRGLOP) REFERENCES HOCVIEN(MAHV); --
 
 -- ALTER TABLE KHOA
 -- ADD FOREIGN KEY (TRGKHOA) REFERENCES GIAOVIEN(MAGV); --
@@ -507,7 +601,7 @@ ALTER TABLE KETQUATHI
 ADD FOREIGN KEY (MAHV) REFERENCES HOCVIEN(MAHV),
     FOREIGN KEY (MAMH) REFERENCES MONHOC(MAMH);
 
--------------------------- I. Ngôn ngữ định nghĩa dữ liệu (Data Definition Language):
+------------------------------------------------ I. Ngôn ngữ định nghĩa dữ liệu (Data Definition Language): -----------------------------------------------------------------------
 -- 1. Tạo quan hệ và khai báo tất cả các ràng buộc khóa chính, khóa ngoại. Thêm vào 3 thuộc tính GHICHU, DIEMTB, XEPLOAI cho quan hệ HOCVIEN.
 ALTER TABLE HOCVIEN
 ADD GHICHU varchar(100),
@@ -561,6 +655,7 @@ ALTER TABLE GIAOVIEN ADD CONSTRAINT CK_NGVL CHECK(GETDATE() - NGVL >= 22)
 
 -- 14.	Tất cả các môn học đều có số tín chỉ lý thuyết và tín chỉ thực hành chênh lệch nhau không quá 3.
 ALTER TABLE MONHOC ADD CONSTRAINT CK_TC CHECK(ABS(TCLT - TCTH) <= 3)
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 INSERT INTO KHOA VALUES('KHMT','Khoa hoc may tinh','7/6/2005','GV01')
 INSERT INTO KHOA VALUES('HTTT','He thong thong tin','7/6/2005','GV02')
@@ -731,9 +826,37 @@ INSERT INTO KETQUATHI(MAHV, MAMH, LANTHI, NGTHI, DIEM, KQUA) VALUES('K1305','CTD
 INSERT INTO KETQUATHI(MAHV, MAMH, LANTHI, NGTHI, DIEM, KQUA) VALUES('K1305','THDC','1','20/5/2006','8.00','Dat')
 INSERT INTO KETQUATHI(MAHV, MAMH, LANTHI, NGTHI, DIEM, KQUA) VALUES('K1305','CTRR','1','13/5/2006','10.00','Dat')
 
--- II. Ngôn ngữ thao tác dữ liệu (Data Manipulation Language):
+---------------------------------------------- II. Ngôn ngữ thao tác dữ liệu (Data Manipulation Language): -----------------------------------------------------------------
+-- 1. Tăng hệ số lương thêm 0.2 cho những giáo viên là trưởng khoa.
+UPDATE GIAOVIEN
+SET HESO = HESO + 0.2
+WHERE MAGV IN (
+    SELECT TRGKHOA
+    FROM KHOA
+)
 
 -- 2. Cập nhật giá trị điểm trung bình tất cả các môn học (DIEMTB) của mỗi học viên (tất cả các môn học đều có hệ số 1 và nếu học viên thi một môn nhiều lần, chỉ lấy điểm của lần thi sau cùng).
+-- Cach 1:
+UPDATE HOCVIEN
+SET DIEMTB = (
+	SELECT AVG(DIEM)
+	FROM (
+		-- CHỌN MÔN HỌC CÓ SỐ LẦN THI LẠI LỚN NHẤT
+		SELECT *
+		FROM KETQUATHI AS KQ
+		WHERE LANTHI = (
+			-- CHỌN SỐ LẦN THI LẠI LỚN NHẤT
+			SELECT MAX(LANTHI)
+			FROM KETQUATHI
+			WHERE KQ.MAHV = KETQUATHI.MAHV 
+			AND KQ.MAMH = KETQUATHI.MAMH
+		) 
+	) AS LASTATTEMPT
+	WHERE HOCVIEN.MAHV = LASTATTEMPT.MAHV
+)
+SELECT * FROM HOCVIEN
+
+-- Cach 2:
 UPDATE HOCVIEN
 SET DIEMTB = (
     SELECT AVG(DIEM)
@@ -770,50 +893,105 @@ SET XEPLOAI = CASE
     ELSE 'Y'
 END;
 
---III. Ngôn ngữ truy vấn dữ liệu:
+---------------------------------------------------------- III. Ngôn ngữ truy vấn dữ liệu có cấu trúc: --------------------------------------------------------------
 --1.	In ra danh sách (mã học viên, họ tên, ngày sinh, mã lớp) lớp trưởng của các lớp.
 SELECT HV.MAHV, HV.HO+' '+HV.TEN AS HOTEN, HV.NGSINH, HV.MALOP 
 FROM HOCVIEN HV
-INNER JOIN LOP L ON L.TRGLOP=HV.MAHV
+INNER JOIN LOP L ON L.TRGLOP = HV.MAHV
+
 --2.	In ra bảng điểm khi thi (mã học viên, họ tên, lần thi, điểm số) môn CTRR của lớp “K12”, sắp xếp theo tên, họ học viên.
 SELECT HOCVIEN.MAHV, HOCVIEN.HO+' '+HOCVIEN.TEN AS HOTEN, KETQUATHI.LANTHI, KETQUATHI.DIEM
 FROM KETQUATHI
 INNER JOIN  HOCVIEN ON KETQUATHI.MAHV = HOCVIEN.MAHV
 INNER JOIN MONHOC ON KETQUATHI.MAMH = MONHOC.MAMH
-WHERE TENMH = 'cau truc roi rac' AND MALOP = 'K12'
+WHERE KETQUATHI.MAMH = 'CTRR' AND MALOP = 'K12'
 ORDER BY TEN, HO
+
 --3.	In ra danh sách những học viên (mã học viên, họ tên) và những môn học mà học viên đó thi lần thứ nhất đã đạt.
 SELECT KETQUATHI.MAHV, HOCVIEN.HO+' '+HOCVIEN.TEN AS HOTEN, TENMH 
 FROM KETQUATHI
 INNER  JOIN MONHOC ON MONHOC.MAMH = KETQUATHI.MAMH
 INNER JOIN HOCVIEN ON HOCVIEN.MAHV = KETQUATHI.MAHV
 WHERE LANTHI = 1 AND KQUA = 'Dat'
+
 --4.	In ra danh sách học viên (mã học viên, họ tên) của lớp “K11” thi môn CTRR không đạt (ở lần thi 1).
 SELECT HOCVIEN.MAHV, HOCVIEN.HO+' '+HOCVIEN.TEN AS HOTEN
 FROM HOCVIEN
 INNER JOIN KETQUATHI ON KETQUATHI.MAHV = HOCVIEN.MAHV
 INNER JOIN MONHOC ON KETQUATHI.MAMH = MONHOC.MAMH
 WHERE HOCVIEN.MALOP = 'K11' AND TENMH = 'cau truc roi rac' AND LANTHI = 1 AND KQUA = 'Khong Dat'
---5.* Danh sách học viên (mã học viên, họ tên) của lớp “K” thi môn CTRR không đạt (ở tất cả các lần thi).
-SELECT DISTINCT(HOCVIEN.MAHV), HOCVIEN.HO+' '+HOCVIEN.TEN AS HOTEN
-FROM HOCVIEN
-INNER JOIN KETQUATHI ON KETQUATHI.MAHV = HOCVIEN.MAHV
-INNER JOIN MONHOC ON KETQUATHI.MAMH = MONHOC.MAMH
-WHERE HOCVIEN.MALOP LIKE 'K%' AND TENMH = 'cau truc roi rac' AND KQUA = 'Khong Dat'
 
-SELECT A.MAHV, HOTEN FROM (
-	SELECT KQ.MAHV, HO + ' ' + TEN AS HOTEN, LANTHI
-	FROM KETQUATHI KQ INNER JOIN HOCVIEN HV 
-	ON KQ.MAHV = HV.MAHV
-	WHERE LEFT(KQ.MAHV, 3) = 'K11' AND MAMH = 'CTRR' AND KQUA = 'Khong Dat'
-) A 
-INNER JOIN (
-	SELECT MAHV, MAX(LANTHI) LANTHIMAX FROM KETQUATHI 
-	WHERE LEFT(MAHV, 3) = 'K11' AND MAMH = 'CTRR'
-	GROUP BY MAHV, MAMH 
-) B 
-ON A.MAHV = B.MAHV
-WHERE LANTHI = LANTHIMAX
+--5.* Danh sách học viên (mã học viên, họ tên) của lớp “K” thi môn CTRR không đạt (ở tất cả các lần thi).
+
+
+--6. Tìm tên những môn học mà giáo viên có tên “Tran Tam Thanh” dạy trong học kỳ 1 năm 2006.
+SELECT DISTINCT MONHOC.TENMH
+FROM GIANGDAY
+JOIN GIAOVIEN ON GIAOVIEN.MAGV = GIANGDAY.MAGV
+JOIN MONHOC ON MONHOC.MAMH = GIANGDAY.MAMH
+WHERE GIAOVIEN.HOTEN = 'Tran Tam Thanh' AND HOCKY = 1 AND NAM = 2006
+
+--7. Tìm những môn học (mã môn học, tên môn học) mà giáo viên chủ nhiệm lớp “K11” dạy trong học kỳ 1 năm 2006.
+SELECT MAMH, TENMH
+FROM MONHOC
+WHERE MAMH IN (
+    SELECT MAMH
+    FROM GIANGDAY
+    JOIN GIAOVIEN ON GIAOVIEN.MAGV = GIANGDAY.MAGV
+    JOIN LOP ON LOP.MAGVCN = GIAOVIEN.MAGV
+    WHERE LOP.MALOP = 'K11' AND HOCKY = 1 AND NAM = 2006
+)
+
+--8. Tìm họ tên lớp trưởng của các lớp mà giáo viên có tên “Nguyen To Lan” dạy môn “Co So Du Lieu”.
+SELECT HV.HO + ' ' + HV.TEN AS HOTEN
+FROM HOCVIEN HV
+WHERE MAHV IN (
+    SELECT LOP.TRGLOP
+    FROM LOP
+    JOIN GIANGDAY ON GIANGDAY.MALOP = LOP.MALOP
+    JOIN GIAOVIEN ON GIAOVIEN.MAGV = GIANGDAY.MAGV
+    JOIN MONHOC ON MONHOC.MAMH = GIANGDAY.MAMH
+    WHERE GIAOVIEN.HOTEN = 'Nguyen To Lan' AND MONHOC.TENMH = 'Co So Du Lieu'
+)
+
+--9. In ra danh sách những môn học (mã môn học, tên môn học) phải học liền trước môn “Co So Du Lieu”.
+SELECT MAMH, TENMH
+FROM MONHOC
+WHERE MAMH IN (
+	SELECT MAMH_TRUOC
+	FROM DIEUKIEN
+	WHERE MAMH = (
+		SELECT MAMH 
+		FROM MONHOC
+		WHERE TENMH = 'Co so du lieu'
+	)
+)
+
+--10. Môn “Cau Truc Roi Rac” là môn bắt buộc phải học liền trước những môn học (mã môn học, tên môn học) nào.
+SELECT MAMH, TENMH
+FROM MONHOC
+WHERE MAMH IN (
+	SELECT MAMH
+	FROM DIEUKIEN
+	WHERE MAMH_TRUOC IN (
+		SELECT MAMH
+		FROM MONHOC
+		WHERE TENMH = 'Cau truc roi rac'
+	)
+)
+
+--11. Tìm họ tên giáo viên dạy môn CTRR cho cả hai lớp “K11” và “K12” trong cùng học kỳ 1 năm 2006.
+SELECT HOTEN
+FROM GIAOVIEN
+WHERE MAGV IN (
+	SELECT MAGV
+	FROM GIANGDAY
+	WHERE MALOP = 'K11' AND HOCKY = 1 AND NAM = 2006 AND MAGV IN (
+		SELECT MAGV
+		FROM GIANGDAY
+		WHERE MALOP = 'K12'
+	)
+)
 
 -- 12. Tìm những học viên (mã học viên, họ tên) thi không đạt môn CSDL ở lần thi thứ 1 nhưng chưa thi lại môn này.
 SELECT HOCVIEN.MAHV, HO + ' ' + TEN AS HOTEN
@@ -831,6 +1009,14 @@ AND NOT EXISTS
     AND KQ2.LANTHI > 1
 )
 
+--13. Tìm giáo viên (mã giáo viên, họ tên) không được phân công giảng dạy bất kỳ môn học nào.
+SELECT MAGV, HOTEN
+FROM GIAOVIEN
+WHERE MAGV NOT IN (
+    SELECT MAGV
+    FROM GIANGDAY
+)
+
 -- 14. Tìm giáo viên (mã giáo viên, họ tên) không được phân công giảng dạy bất kỳ môn học nào thuộc khoa giáo viên đó phụ trách.
 SELECT GV1.MAGV, GV1.HOTEN
 FROM GIAOVIEN GV1
@@ -840,6 +1026,26 @@ WHERE NOT EXISTS(
 	INNER JOIN MONHOC ON GD.MAMH = MONHOC.MAMH 
 	WHERE GD.MAGV = GV1.MAGV
 	AND MONHOC.MAKHOA = GV1.MAKHOA
+)
+
+--15. Tìm họ tên các học viên thuộc lớp “K11” thi một môn bất kỳ quá 3 lần vẫn “Khong dat” hoặc thi lần thứ 2 môn CTRR được 5 điểm.
+SELECT HO + ' ' + TEN AS HOTEN
+FROM HOCVIEN
+WHERE MALOP = 'K11' AND MAHV IN (
+    SELECT MAHV
+    FROM KETQUATHI
+    WHERE (LANTHI >= 3 AND KQUA = 'Khong dat') OR (LANTHI = 2 AND DIEM = 5 AND MAMH = 'CTRR')
+)
+
+--16. Tìm họ tên giáo viên dạy môn CTRR cho ít nhất hai lớp trong cùng một học kỳ của một năm học.
+SELECT HOTEN
+FROM GIAOVIEN
+WHERE MAGV IN (
+    SELECT MAGV
+    FROM GIANGDAY
+    WHERE MAMH = 'CTRR'
+    GROUP BY MAGV, HOCKY, NAMHOC
+    HAVING COUNT(MALOP) >=2
 )
 
 -- 17. Danh sách học viên và điểm thi môn CSDL (chỉ lấy điểm của lần thi sau cùng).
@@ -860,3 +1066,103 @@ FROM HOCVIEN
 INNER JOIN KETQUATHI KQ ON KQ.MAHV = HOCVIEN.MAHV
 WHERE KQ.MAMH = 'CSDL'
 GROUP BY HOCVIEN.MAHV, HOCVIEN.MAHV, HO+' '+TEN
+
+--23. Tìm giáo viên (mã giáo viên, họ tên) là giáo viên chủ nhiệm của một lớp, đồng thời dạy cho lớp đó ít nhất một môn học.
+SELECT MAGV, HOTEN
+FROM GIAOVIEN
+WHERE MAGV IN (
+    SELECT MAGV
+    FROM GIANGDAY
+    JOIN LOP ON GIANGDAY.MAGV = LOP.MAGVCN
+)
+
+--25. * Tìm họ tên những LOPTRG thi không đạt quá 3 môn (mỗi môn đều thi không đạt ở tất cả các lần thi).
+SELECT HO + ' ' + TEN
+FROM HOCVIEN
+WHERE MAHV IN (
+    SELECT TRGLOP
+    FROM LOP
+    WHERE TRGLOP IN (
+        SELECT MAHV
+        FROM KETQUATHI
+        WHERE KETQUATHI.MAHV = LOP.TRGLOP AND KQUA = 'Khong Dat'
+        GROUP BY MAHV
+        HAVING COUNT(MAMH) >= 3
+    )
+)
+
+--27. Trong từng lớp, tìm học viên (mã học viên, họ tên) có số môn đạt điểm 9, 10 nhiều nhất.
+SELECT MALOP, MAHV, HOTEN
+FROM (
+    SELECT HOCVIEN.MALOP, HOCVIEN.MAHV, HOCVIEN.HO + ' ' + HOCVIEN.TEN AS HOTEN, 
+           ROW_NUMBER() OVER (PARTITION BY HOCVIEN.MALOP ORDER BY COUNT(*) DESC) AS RN
+    FROM HOCVIEN
+    JOIN KETQUATHI ON HOCVIEN.MAHV = KETQUATHI.MAHV
+    WHERE KETQUATHI.DIEM IN (9, 10)
+    GROUP BY HOCVIEN.MALOP, HOCVIEN.MAHV, HOCVIEN.HO, HOCVIEN.TEN
+) AS SubQuery
+WHERE RN = 1;
+
+-- 27.	Trong từng lớp, tìm học viên (mã học viên, họ tên) có số môn đạt điểm 9,10 nhiều nhất.
+SELECT LEFT(A.MAHV, 3) MALOP, A.MAHV, HO + ' ' + TEN HOTEN FROM (
+	SELECT MAHV, RANK () OVER (ORDER BY COUNT(MAMH) DESC) RANK_MH FROM KETQUATHI KQ 
+	WHERE DIEM BETWEEN 9 AND 10
+	GROUP BY KQ.MAHV
+) A INNER JOIN HOCVIEN HV
+ON A.MAHV = HV.MAHV
+WHERE RANK_MH = 1
+GROUP BY LEFT(A.MAHV, 3), A.MAHV, HO, TEN
+
+--29. Trong từng học kỳ của từng năm, tìm giáo viên (mã giáo viên, họ tên) giảng dạy nhiều nhất.
+SELECT HOCKY, NAM, A.MAGV, HOTEN FROM (
+	SELECT HOCKY, NAM, MAGV, RANK() OVER (PARTITION BY HOCKY, NAM ORDER BY COUNT(MAMH) DESC) RANK_SOMH FROM GIANGDAY
+	GROUP BY HOCKY, NAM, MAGV
+) A INNER JOIN GIAOVIEN GV 
+ON A.MAGV = GV.MAGV
+WHERE RANK_SOMH = 1
+
+--32. * Tìm học viên (mã học viên, họ tên) thi môn nào cũng đạt (chỉ xét lần thi sau cùng).
+SELECT C.MAHV, HO + ' ' + TEN HOTEN FROM (
+	SELECT MAHV, COUNT(KQUA) SODAT FROM KETQUATHI A
+	WHERE NOT EXISTS (
+		SELECT 1 
+		FROM KETQUATHI B 
+		WHERE A.MAHV = B.MAHV AND A.MAMH = B.MAMH AND A.LANTHI < B.LANTHI
+	) AND KQUA = 'Dat'
+	GROUP BY MAHV
+	INTERSECT
+	SELECT MAHV, COUNT(MAMH) SOMH FROM KETQUATHI 
+	WHERE LANTHI = 1
+	GROUP BY MAHV
+) C INNER JOIN HOCVIEN HV
+ON C.MAHV = HV.MAHV
+
+--34. * Tìm học viên (mã học viên, họ tên) đã thi tất cả các môn và đều đạt (chỉ xét lần thi sau cùng).
+SELECT C.MAHV, HO + ' ' + TEN HOTEN FROM (
+	SELECT MAHV, COUNT(KQUA) SODAT FROM KETQUATHI A
+	WHERE NOT EXISTS (
+		SELECT 1 FROM KETQUATHI B 
+		WHERE A.MAHV = B.MAHV AND A.MAMH = B.MAMH AND A.LANTHI < B.LANTHI
+	) AND KQUA = 'Dat'
+	GROUP BY MAHV
+	INTERSECT
+	SELECT MAHV, COUNT(MAMH) SOMH FROM KETQUATHI 
+	WHERE LANTHI = 1
+	GROUP BY MAHV
+) C INNER JOIN HOCVIEN HV
+ON C.MAHV = HV.MAHV
+
+--35. ** Tìm học viên (mã học viên, họ tên) có điểm thi cao nhất trong từng môn (lấy điểm ở lần thi sau cùng).
+SELECT A.MAHV, HO + ' ' + TEN HOTEN FROM (
+	SELECT B.MAMH, MAHV, DIEM, DIEMMAX
+	FROM KETQUATHI B INNER JOIN (
+		SELECT MAMH, MAX(DIEM) DIEMMAX FROM KETQUATHI
+		GROUP BY MAMH
+	) C 
+	ON B.MAMH = C.MAMH
+	WHERE NOT EXISTS (
+		SELECT 1 FROM KETQUATHI D 
+		WHERE B.MAHV = D.MAHV AND B.MAMH = D.MAMH AND B.LANTHI < D.LANTHI
+	) AND DIEM = DIEMMAX
+) A INNER JOIN HOCVIEN HV
+ON A.MAHV = HV.MAHV
