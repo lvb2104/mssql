@@ -3,6 +3,7 @@ CREATE DATABASE QLGV;
 USE QLGV;
 SET DATEFORMAT DMY;
 
+------------------------------------------------ I. Ngôn ngữ định nghĩa dữ liệu (Data Definition Language): -----------------------------------------------------------------------
 CREATE TABLE HOCVIEN
 (
     MAHV char(5) PRIMARY KEY,
@@ -90,20 +91,12 @@ ADD FOREIGN KEY (MALOP) REFERENCES LOP(MALOP);
 
 ALTER TABLE LOP
 ADD FOREIGN KEY (MAGVCN) REFERENCES GIAOVIEN(MAGV);
--- FOREIGN KEY (TRGLOP) REFERENCES HOCVIEN(MAHV); --
-
--- ALTER TABLE KHOA
--- ADD FOREIGN KEY (TRGKHOA) REFERENCES GIAOVIEN(MAGV); --
 
 ALTER TABLE MONHOC
 ADD FOREIGN KEY (MAKHOA) REFERENCES KHOA(MAKHOA);
 
 ALTER TABLE DIEUKIEN
 ADD FOREIGN KEY (MAMH) REFERENCES MONHOC(MAMH);
-    -- FOREIGN KEY (MAMH_TRUOC) REFERENCES MONHOC(MAMH); --
-
--- ALTER TABLE GIAOVIEN
--- ADD FOREIGN KEY (MAKHOA) REFERENCES KHOA(MAKHOA); --
 
 ALTER TABLE GIANGDAY
 ADD FOREIGN KEY (MALOP) REFERENCES LOP(MALOP),
@@ -114,12 +107,16 @@ ALTER TABLE KETQUATHI
 ADD FOREIGN KEY (MAHV) REFERENCES HOCVIEN(MAHV),
     FOREIGN KEY (MAMH) REFERENCES MONHOC(MAMH);
 
------------------------------------------------- I. Ngôn ngữ định nghĩa dữ liệu (Data Definition Language): -----------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- 1. Tạo quan hệ và khai báo tất cả các ràng buộc khóa chính, khóa ngoại. Thêm vào 3 thuộc tính GHICHU, DIEMTB, XEPLOAI cho quan hệ HOCVIEN.
 ALTER TABLE HOCVIEN
 ADD GHICHU varchar(100),
     DIEMTB numeric(4, 2),
     XEPLOAI varchar(10);
+   
+-- 2. * Mã học viên là một chuỗi 5 ký tự, 3 ký tự đầu là mã lớp, 2 ký tự cuối cùng là số thứ tự học viên trong lớp. VD: “K1101”
+ALTER TABLE HOCVIEN
+ADD CONSTRAINT MAHV_CHECK CHECK (LEN(MAHV) = 5 AND LEFT(MAHV, 3) = MALOP AND ISNUMERIC(RIGHT(MAHV, 2)) = 1)
 
 -- 3. Thuộc tính GIOITINH chỉ có giá trị là “Nam” hoặc “Nu”.
 ALTER TABLE GIAOVIEN
@@ -157,6 +154,33 @@ ADD CONSTRAINT HOCKY_CHECK CHECK (HOCKY >= 1 AND HOCKY <= 3);
 ALTER TABLE GIAOVIEN
 ADD CONSTRAINT HOCVI_CHECK CHECK (HOCVI IN ('CN', 'KS', 'Ths', 'TS', 'PTS'));
 
+-- 9. Lớp trưởng của một lớp phải là học viên của lớp đó.
+CREATE TRIGGER trigger_9 
+ON LOP
+FOR INSERT, UPDATE 
+AS 
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM inserted i
+		WHERE TRGLOP NOT IN (
+			SELECT MAHV
+			FROM HOCVIEN h
+			WHERE i.MALOP = h.MALOP
+		)
+	)
+	BEGIN
+		PRINT 'TRUONG LOP KHONG NAM TRONG LOP!'
+		ROLLBACK TRANSACTION
+	END
+	ELSE
+	BEGIN 
+		PRINT 'THANH CONG'
+	END
+END
+
+-- 10. Trưởng khoa phải là giáo viên thuộc khoa và có học vị “TS” hoặc “PTS”.
+
 -- 11.	Học viên ít nhất là 18 tuổi.
 ALTER TABLE HOCVIEN ADD CONSTRAINT CK_TUOI CHECK(GETDATE() - NGSINH >= 18)
 
@@ -168,6 +192,108 @@ ALTER TABLE GIAOVIEN ADD CONSTRAINT CK_NGVL CHECK(GETDATE() - NGVL >= 22)
 
 -- 14.	Tất cả các môn học đều có số tín chỉ lý thuyết và tín chỉ thực hành chênh lệch nhau không quá 3.
 ALTER TABLE MONHOC ADD CONSTRAINT CK_TC CHECK(ABS(TCLT - TCTH) <= 3)
+
+-- 15. Học viên chỉ được thi một môn học nào đó khi lớp của học viên đã học xong môn học này.
+-- 16. Mỗi học kỳ của một năm học, một lớp chỉ được học tối đa 3 môn.
+-- 17. Sỉ số của một lớp bằng với số lượng học viên thuộc lớp đó.
+CREATE TRIGGER trg_update_siso 
+ON HOCVIEN
+FOR INSERT, DELETE
+AS
+BEGIN
+    -- Cập nhật sĩ số khi thêm học viên vào lớp
+    UPDATE LOP
+    SET SISO = (SELECT COUNT(*) FROM HOCVIEN WHERE HOCVIEN.MALOP = LOP.MALOP)
+    WHERE LOP.MALOP IN (SELECT DISTINCT MALOP FROM INSERTED);
+
+    -- Cập nhật sĩ số khi xóa học viên khỏi lớp
+    UPDATE LOP
+    SET SISO = (SELECT COUNT(*) FROM HOCVIEN WHERE HOCVIEN.MALOP = LOP.MALOP)
+    WHERE LOP.MALOP IN (SELECT DISTINCT MALOP FROM DELETED);
+END;
+
+-- 18. Trong quan hệ DIEUKIEN giá trị của thuộc tính MAMH và MAMH_TRUOC trong cùng một bộ không được giống nhau (“A”,”A”) và cũng không tồn tại hai bộ (“A”,”B”) và (“B”,”A”).
+-- 19. Các giáo viên có cùng học vị, học hàm, hệ số lương thì mức lương bằng nhau.
+CREATE TRIGGER trg_CheckMucLuong ON GIAOVIEN
+FOR INSERT, UPDATE
+AS
+BEGIN
+    -- Kiểm tra dữ liệu mới chèn hoặc cập nhật
+    IF EXISTS (
+        SELECT 1
+        FROM INSERTED i
+        JOIN GIAOVIEN gv
+        ON i.HOCVI = gv.HOCVI
+           AND i.HOCHAM = gv.HOCHAM
+           AND i.MUCLUONG <> gv.MUCLUONG
+    )
+    BEGIN
+        RAISERROR ('Mức lương không đồng nhất cho các giáo viên có cùng học vị, học hàm, và hệ số lương.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END
+END;
+
+-- 20. Học viên chỉ được thi lại (lần thi >1) khi điểm của lần thi trước đó dưới 5.
+CREATE TRIGGER trg_CheckDiemThiLai
+ON KetQuaThi
+FOR INSERT, UPDATE
+AS
+BEGIN
+    -- Kiểm tra nếu có lần thi mới không hợp lệ
+    IF EXISTS (
+        SELECT 1
+        FROM INSERTED i
+        JOIN KETQUATHI kqt
+        ON i.MaHV = kqt.MaHV
+           AND i.MAMH = kqt.MAMH
+           AND i.LANTHI = kqt.LANTHI + 1
+        WHERE kqt.DIEM >= 5
+    )
+    BEGIN
+        RAISERROR ('Học viên chỉ được thi lại khi điểm của lần thi trước dưới 5.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END
+END;
+
+-- 21. gày thi của lần thi sau phải lớn hơn ngày thi của lần thi trước (cùng học viên, cùng môn học).
+CREATE TRIGGER trg_ins_ngaythi ON KETQUATHI
+FOR INSERT, UPDATE
+AS 
+BEGIN 
+	IF EXISTS (
+		SELECT 1
+		FROM INSERTED I
+		JOIN KETQUATHI KQ
+		ON I.MAHV = KQ.MAHV
+		AND I.LANTHI = KQ.LANTHI+1
+		AND I.MAMH = KQ.MAMH
+		WHERE I.NGTHI <= KQ.NGTHI
+	)
+	BEGIN
+		RAISERROR('Ngay thi sau cua hoc vien khong hop le',16,1)
+		ROLLBACK TRANSACTION;
+	END
+END
+
+-- 22. Khi phân công giảng dạy một môn học, phải xét đến thứ tự trước sau giữa các môn học (sau khi học xong những môn học phải học trước mới được học những môn liền sau).
+-- 23. Giáo viên chỉ được phân công dạy những môn thuộc khoa giáo viên đó phụ trách.
+CREATE TRIGGER trg_ins_phutrach ON GIANGDAY
+FOR INSERT, UPDATE
+AS
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM INSERTED I
+		JOIN GIAOVIEN GV ON I.MAGV = GV.MAGV
+		JOIN MONHOC MH ON MH.MAMH = I.MAMH
+		WHERE MH.MAKHOA <> GV.MAKHOA
+	)
+	BEGIN 
+		RAISERROR('Mon hoc phan cong cho giao vien khong cung khoa',16,1)
+		ROLLBACK TRANSACTION;
+	END
+END
+
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 INSERT INTO KHOA VALUES('KHMT','Khoa hoc may tinh','7/6/2005','GV01')
@@ -435,7 +561,15 @@ INNER JOIN MONHOC ON KETQUATHI.MAMH = MONHOC.MAMH
 WHERE HOCVIEN.MALOP = 'K11' AND TENMH = 'cau truc roi rac' AND LANTHI = 1 AND KQUA = 'Khong Dat'
 
 --5.* Danh sách học viên (mã học viên, họ tên) của lớp “K” thi môn CTRR không đạt (ở tất cả các lần thi).
-
+SELECT HOCVIEN.MAHV, HO + ' ' + TEN AS HOTEN
+FROM HOCVIEN
+JOIN KETQUATHI ON KETQUATHI.MAHV = HOCVIEN.MAHV
+WHERE HOCVIEN.MALOP LIKE 'K%' AND MAMH = 'CTRR' AND KQUA = 'Khong Dat' AND LANTHI = (
+	-- lấy ra lần thi cao nhất của môn CTRR
+	SELECT MAX(LANTHI)
+	FROM KETQUATHI
+	WHERE MAMH = 'CTRR' AND MAHV = HOCVIEN.MAHV
+)
 
 --6. Tìm tên những môn học mà giáo viên có tên “Tran Tam Thanh” dạy trong học kỳ 1 năm 2006.
 SELECT DISTINCT MONHOC.TENMH
@@ -580,6 +714,29 @@ INNER JOIN KETQUATHI KQ ON KQ.MAHV = HOCVIEN.MAHV
 WHERE KQ.MAMH = 'CSDL'
 GROUP BY HOCVIEN.MAHV, HOCVIEN.MAHV, HO+' '+TEN
 
+-- 19. Khoa nào (mã khoa, tên khoa) được thành lập sớm nhất.
+SELECT TOP 1 MAKHOA, TENKHOA
+FROM KHOA
+ORDER BY NGTLAP ASC
+
+-- 20. Có bao nhiêu giáo viên có học hàm là “GS” hoặc “PGS”.
+SELECT COUNT(*)
+FROM GIAOVIEN
+WHERE HOCHAM = 'GS' OR HOCHAM = 'PGS'
+
+-- 21. Thống kê có bao nhiêu giáo viên có học vị là “CN”, “KS”, “Ths”, “TS”, “PTS” trong mỗi khoa.
+SELECT TENKHOA, COUNT(HOCVI)
+FROM KHOA
+JOIN GIAOVIEN ON GIAOVIEN.MAKHOA = KHOA.MAKHOA
+WHERE HOCVI IN ('CN', 'KS', 'Ths', 'TS', 'PTS')
+GROUP BY TENKHOA, HOCVI
+
+-- 22. Mỗi môn học thống kê số lượng học viên theo kết quả (đạt và không đạt).
+SELECT MAMH, KQUA, COUNT(KQUA) AS SL
+FROM KETQUATHI
+--WHERE KQUA = 'Dat'
+GROUP BY MAMH, KQUA
+
 --23. Tìm giáo viên (mã giáo viên, họ tên) là giáo viên chủ nhiệm của một lớp, đồng thời dạy cho lớp đó ít nhất một môn học.
 SELECT MAGV, HOTEN
 FROM GIAOVIEN
@@ -589,7 +746,13 @@ WHERE MAGV IN (
     JOIN LOP ON GIANGDAY.MAGV = LOP.MAGVCN
 )
 
---25. * Tìm họ tên những LOPTRG thi không đạt quá 3 môn (mỗi môn đều thi không đạt ở tất cả các lần thi).
+-- 24. Tìm họ tên lớp trưởng của lớp có sỉ số cao nhất.
+SELECT TOP 1 HO + ' ' + TEN AS HOTEN
+FROM LOP
+JOIN HOCVIEN ON HOCVIEN.MAHV = LOP.TRGLOP
+ORDER BY SISO DESC
+
+-- 25.* Tìm họ tên những LOPTRG thi không đạt quá 3 môn (mỗi môn đều thi không đạt ở tất cả các lần thi).
 SELECT HO + ' ' + TEN
 FROM HOCVIEN
 WHERE MAHV IN (
@@ -604,53 +767,105 @@ WHERE MAHV IN (
     )
 )
 
---27. Trong từng lớp, tìm học viên (mã học viên, họ tên) có số môn đạt điểm 9, 10 nhiều nhất.
-SELECT MALOP, MAHV, HOTEN
-FROM (
-    SELECT HOCVIEN.MALOP, HOCVIEN.MAHV, HOCVIEN.HO + ' ' + HOCVIEN.TEN AS HOTEN, 
-           ROW_NUMBER() OVER (PARTITION BY HOCVIEN.MALOP ORDER BY COUNT(*) DESC) AS RN
-    FROM HOCVIEN
-    JOIN KETQUATHI ON HOCVIEN.MAHV = KETQUATHI.MAHV
-    WHERE KETQUATHI.DIEM IN (9, 10)
-    GROUP BY HOCVIEN.MALOP, HOCVIEN.MAHV, HOCVIEN.HO, HOCVIEN.TEN
-) AS SubQuery
-WHERE RN = 1;
+-- 26. Tìm học viên (mã học viên, họ tên) có số môn đạt điểm 9, 10 nhiều nhất.
+SELECT TOP 1 WITH TIES HOCVIEN.MAHV, HO + ' ' + TEN AS HOTEN
+FROM HOCVIEN
+JOIN KETQUATHI ON KETQUATHI.MAHV = HOCVIEN.MAHV
+WHERE DIEM >= 9
+GROUP BY HOCVIEN.MAHV, HO, TEN
+ORDER BY COUNT(*) DESC
 
--- 27.	Trong từng lớp, tìm học viên (mã học viên, họ tên) có số môn đạt điểm 9,10 nhiều nhất.
-SELECT LEFT(A.MAHV, 3) MALOP, A.MAHV, HO + ' ' + TEN HOTEN FROM (
-	SELECT MAHV, RANK () OVER (ORDER BY COUNT(MAMH) DESC) RANK_MH FROM KETQUATHI KQ 
-	WHERE DIEM BETWEEN 9 AND 10
-	GROUP BY KQ.MAHV
-) A INNER JOIN HOCVIEN HV
-ON A.MAHV = HV.MAHV
-WHERE RANK_MH = 1
-GROUP BY LEFT(A.MAHV, 3), A.MAHV, HO, TEN
+-- 27. Trong từng lớp, tìm học viên (mã học viên, họ tên) có số môn đạt điểm 9,10 nhiều nhất.
+SELECT MALOP, MAHV, HO + ' ' + TEN AS HOTEN
+FROM HOCVIEN HV
+WHERE MAHV = (
+	SELECT TOP 1 HOCVIEN.MAHV
+	FROM HOCVIEN
+	JOIN KETQUATHI ON KETQUATHI.MAHV = HOCVIEN.MAHV
+	WHERE DIEM >= 9 AND HV.MALOP = MALOP
+	GROUP BY HOCVIEN.MAHV
+	ORDER BY COUNT(*) DESC
+)
 
---29. Trong từng học kỳ của từng năm, tìm giáo viên (mã giáo viên, họ tên) giảng dạy nhiều nhất.
-SELECT HOCKY, NAM, A.MAGV, HOTEN FROM (
-	SELECT HOCKY, NAM, MAGV, RANK() OVER (PARTITION BY HOCKY, NAM ORDER BY COUNT(MAMH) DESC) RANK_SOMH FROM GIANGDAY
-	GROUP BY HOCKY, NAM, MAGV
-) A INNER JOIN GIAOVIEN GV 
-ON A.MAGV = GV.MAGV
-WHERE RANK_SOMH = 1
+-- 28. Trong từng học kỳ của từng năm, mỗi giáo viên phân công dạy bao nhiêu môn học, bao nhiêu lớp.
+SELECT NAM, HOCKY, MAGV, COUNT(MAMH) AS SLMONHOC, COUNT(MALOP) AS SLLOP
+FROM GIANGDAY
+GROUP BY NAM, HOCKY, MAGV
 
---32. * Tìm học viên (mã học viên, họ tên) thi môn nào cũng đạt (chỉ xét lần thi sau cùng).
-SELECT C.MAHV, HO + ' ' + TEN HOTEN FROM (
-	SELECT MAHV, COUNT(KQUA) SODAT FROM KETQUATHI A
-	WHERE NOT EXISTS (
-		SELECT 1 
-		FROM KETQUATHI B 
-		WHERE A.MAHV = B.MAHV AND A.MAMH = B.MAMH AND A.LANTHI < B.LANTHI
-	) AND KQUA = 'Dat'
-	GROUP BY MAHV
-	INTERSECT
-	SELECT MAHV, COUNT(MAMH) SOMH FROM KETQUATHI 
-	WHERE LANTHI = 1
-	GROUP BY MAHV
-) C INNER JOIN HOCVIEN HV
-ON C.MAHV = HV.MAHV
+-- 29. Trong từng học kỳ của từng năm, tìm giáo viên (mã giáo viên, họ tên) giảng dạy nhiều nhất.
+SELECT DISTINCT NAM, HOCKY, GIAOVIEN.MAGV, HOTEN
+FROM GIANGDAY GD1
+JOIN GIAOVIEN ON GIAOVIEN.MAGV = GD1.MAGV
+WHERE GD1.MAGV IN (
+-- tìm trong học kì và năm của query bên ngoài, thì bên trong tìm ra list GV -> TOP 1
+	SELECT TOP 1 WITH TIES MAGV
+	FROM GIANGDAY GD2
+	WHERE GD1.NAM = GD2.NAM AND GD1.HOCKY = GD2.HOCKY
+	GROUP BY GD2.MAGV
+	ORDER BY COUNT(*) DESC
+) 
 
---34. * Tìm học viên (mã học viên, họ tên) đã thi tất cả các môn và đều đạt (chỉ xét lần thi sau cùng).
+-- 30. Tìm môn học (mã môn học, tên môn học) có nhiều học viên thi không đạt (ở lần thi thứ 1) nhất.
+SELECT MAMH, TENMH
+FROM MONHOC
+WHERE MAMH IN (
+	SELECT TOP 1 WITH TIES MAMH
+	FROM KETQUATHI
+	WHERE KQUA = 'Khong Dat' AND LANTHI = 1
+	GROUP BY MAMH
+	ORDER BY COUNT(*) DESC
+)
+
+-- 31. Tìm học viên (mã học viên, họ tên) thi môn nào cũng đạt (chỉ xét lần thi thứ 1).
+SELECT DISTINCT HOCVIEN.MAHV, HO + ' ' + TEN AS HOTEN
+FROM HOCVIEN
+JOIN KETQUATHI ON HOCVIEN.MAHV = KETQUATHI.MAHV
+WHERE HOCVIEN.MAHV NOT IN (
+	SELECT MAHV
+	FROM KETQUATHI
+	WHERE LANTHI = 1 AND KQUA = 'Khong Dat'
+)
+
+-- 32.* Tìm học viên (mã học viên, họ tên) thi môn nào cũng đạt (chỉ xét lần thi sau cùng).
+SELECT DISTINCT HOCVIEN.MAHV, HO + ' ' + TEN AS HOTEN
+FROM HOCVIEN
+JOIN KETQUATHI ON HOCVIEN.MAHV = KETQUATHI.MAHV
+WHERE HOCVIEN.MAHV NOT IN (
+	SELECT MAHV
+	FROM KETQUATHI
+	WHERE KQUA = 'Khong Dat' AND LANTHI = (
+		SELECT MAX(LANTHI)
+		FROM KETQUATHI
+		WHERE MAHV = HOCVIEN.MAHV AND MAMH = KETQUATHI.MAMH
+	)
+)
+
+-- 33.* Tìm học viên (mã học viên, họ tên) đã thi tất cả các môn và đều đạt (chỉ xét lần thi thứ 1).
+SELECT DISTINCT HOCVIEN.MAHV, HO + ' ' + TEN AS HOTEN
+FROM HOCVIEN
+JOIN KETQUATHI ON HOCVIEN.MAHV = KETQUATHI.MAHV
+WHERE HOCVIEN.MAHV NOT IN (
+	SELECT MAHV
+	FROM KETQUATHI
+	WHERE LANTHI = 1 AND KQUA = 'Khong Dat'
+) AND EXISTS (
+	SELECT COUNT(*)
+	FROM KETQUATHI
+	WHERE HOCVIEN.MAHV = MAHV
+	HAVING COUNT(DISTINCT MAMH) = (
+		SELECT COUNT(*)
+		FROM MONHOC
+	)
+)
+
+SELECT HOCVIEN.MAHV, HO+' '+TEN AS HOTEN
+FROM HOCVIEN
+JOIN KETQUATHI ON HOCVIEN.MAHV = KETQUATHI.MAHV
+WHERE LANTHI = 1 AND KQUA = 'Dat'
+GROUP BY HOCVIEN.MAHV, HO+' '+TEN
+HAVING COUNT(DISTINCT MAMH) = (SELECT COUNT(DISTINCT MAMH) FROM MONHOC);
+
+-- 34.* Tìm học viên (mã học viên, họ tên) đã thi tất cả các môn và đều đạt (chỉ xét lần thi sau cùng).
 SELECT C.MAHV, HO + ' ' + TEN HOTEN FROM (
 	SELECT MAHV, COUNT(KQUA) SODAT FROM KETQUATHI A
 	WHERE NOT EXISTS (
@@ -665,7 +880,7 @@ SELECT C.MAHV, HO + ' ' + TEN HOTEN FROM (
 ) C INNER JOIN HOCVIEN HV
 ON C.MAHV = HV.MAHV
 
---35. ** Tìm học viên (mã học viên, họ tên) có điểm thi cao nhất trong từng môn (lấy điểm ở lần thi sau cùng).
+-- 35.** Tìm học viên (mã học viên, họ tên) có điểm thi cao nhất trong từng môn (lấy điểm ở lần thi sau cùng).
 SELECT A.MAHV, HO + ' ' + TEN HOTEN FROM (
 	SELECT B.MAMH, MAHV, DIEM, DIEMMAX
 	FROM KETQUATHI B INNER JOIN (
@@ -679,3 +894,9 @@ SELECT A.MAHV, HO + ' ' + TEN HOTEN FROM (
 	) AND DIEM = DIEMMAX
 ) A INNER JOIN HOCVIEN HV
 ON A.MAHV = HV.MAHV
+
+
+
+
+
+
